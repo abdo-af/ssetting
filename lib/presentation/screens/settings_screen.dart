@@ -1,8 +1,10 @@
+// lib/presentation/screens/settings_screen.dart
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../data/settings_local.dart';
+import '../cubit/settings_cubit.dart';
 import 'about_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -21,45 +23,38 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   File? _image;
+  final ImagePicker _picker = ImagePicker();
 
-  Future<void> _pickImage() async {
-    final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
-
-    if (pickedFile != null) {
-      setState(() {
-        _image = File(pickedFile.path);
-      });
-
-      // بعد ما يختار الصورة ارفعها على فايربيز
-      await _uploadUserData("abdoelsedemy8@gmail.com", _image);
+  @override
+  void initState() {
+    super.initState();
+    // read initial image from cubit if available
+    final cubit = context.read<SettingsCubit>();
+    final state = cubit.state;
+    if (state is dynamic && state.imageFile != null) {
+      _image = state.imageFile;
     }
+    // subscribe to changes
+    cubit.stream.listen((s) {
+      if (s is dynamic) {
+        setState(() {
+          _image = s.imageFile;
+        });
+      }
+    });
   }
 
-  Future<void> _uploadUserData(String email, File? imageFile) async {
-    if (imageFile == null) return;
+  Future<void> _pickImage() async {
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final path = pickedFile.path;
+      // save path via cubit (which writes to SharedPreferences)
+      context.read<SettingsCubit>().setImagePath(path);
 
-    try {
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('user_images')
-          .child('$email.jpg');
-
-      await ref.putFile(imageFile);
-      final imageUrl = await ref.getDownloadURL();
-
-      await FirebaseFirestore.instance.collection('users').doc(email).set({
-        'email': email,
-        'image_url': imageUrl,
+      // update local preview immediately
+      setState(() {
+        _image = File(path);
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
     }
   }
 
@@ -78,15 +73,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           children: [
             const SizedBox(height: 10),
-            // صورة المستخدم
+
             Center(
               child: CircleAvatar(
-                radius: 55,
-                backgroundImage:
-                _image != null ? FileImage(_image!) : null,
-                backgroundColor: Colors.grey[300],
+                radius: 60,
+                backgroundImage: _image != null ? FileImage(_image!) : null,
                 child: _image == null
-                    ? const Icon(Icons.person, size: 50, color: Colors.white70)
+                    ? const Icon(Icons.person, size: 60, color: Colors.white70)
                     : null,
               ),
             ),
@@ -98,7 +91,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             const SizedBox(height: 15),
-            // زرار تعديل الصورة
+
             Center(
               child: ElevatedButton.icon(
                 onPressed: _pickImage,
@@ -114,7 +107,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 25),
 
-            // تبديل اللغة
             SwitchListTile(
               title: const Text("Language (English / Arabic)"),
               value: true,
@@ -122,7 +114,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               secondary: const Icon(Icons.language),
             ),
 
-            // دارك مود
+            // Dark Mode switch now uses the cubit via the callback passed in main
             SwitchListTile(
               title: const Text("Dark Mode"),
               value: isDarkMode,
@@ -130,7 +122,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               secondary: const Icon(Icons.dark_mode),
             ),
 
-            // عن التطبيق
             ListTile(
               leading: const Icon(Icons.info),
               title: const Text("About"),
@@ -145,7 +136,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
 
-            // تسجيل الخروج
             ListTile(
               leading: const Icon(Icons.logout),
               title: const Text("Logout"),

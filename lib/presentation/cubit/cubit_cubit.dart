@@ -1,10 +1,19 @@
-/*
-import 'package:bloc/bloc.dart';
-import 'package:meta/meta.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/repositories.dart';
 
-part '../cubit_state.dart';
 
-class Cubit extends Cubit<State> {
-  Cubit() : super(Initial());
+class SettingsCubit extends Cubit<bool> {
+  final SettingsRepository repo;
+
+  SettingsCubit(this.repo) : super(false);
+
+  Future<void> loadTheme() async {
+    final isDark = await repo.getTheme();
+    emit(isDark);
+  }
+
+  Future<void> toggleTheme(bool value) async {
+    await repo.setTheme(value);
+    emit(value);
+  }
 }
-*/

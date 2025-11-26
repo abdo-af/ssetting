@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "803783749874",
+    "project_id": "setting-21af2",
+    "storage_bucket": "setting-21af2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:803783749874:android:bdfe32016a2db68ca5e06b",
+        "android_client_info": {
+          "package_name": "com.example.ssetting"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiD5IILoh-KImRvdNhbgOJKaqZ8sTncHE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
